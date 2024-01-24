@@ -1,4 +1,5 @@
 /*
+
     The MIT License (MIT)
 
     Copyright (c) 2018, hathach for Adafruit
@@ -33,44 +34,80 @@ extern "C" {
 // COMMON CONFIGURATION
 //--------------------------------------------------------------------
 
-#ifdef USE_TINYUSB_HOST
-// native as host
+// 以下の "//#define TUSB_USE_NATIVE_HOST" の "//" を外して "#define TUSB_USE_NATIVE_HOST" にして、
+// この "tusb_config_rp2040.h" を保存すると、RP2040内のUSBコントローラーをホストとして有効化してPico-Pio-USBのホストを無効化します。
+// 本当なら "#define TUSB_USE_NATIVE_HOST" を、Arduinoのユーザースケッチ(xxx.ino)の冒頭に移したいのですが、
+// "#define TUSB_USE_NATIVE_HOST" を、Arduinoのスケッチ側に移すとコンパイルエラーが起きます。
+// なにかしらが足りないっぽいのですが、色々試しましたが結局私には分かりませんでした。誰か解決してくれませんか？
+//
+// If you remove "//" from "//#define TUSB_USE_NATIVE_HOST" below and
+// set it to "#define TUSB_USE_NATIVE_HOST" and save this "tusb_config_rp2040.h", 
+// the USB controller in RP2040 will be enabled as a host
+// and Pico-Pio-USB will be disabled the host.
+// I really want to move "#define TUSB_USE_NATIVE_HOST" to 
+// the beginning of the Arduino user sketch (xxx.ino), 
+// but if I move "#define TUSB_USE_NATIVE_HOST" to the Arduino sketch side,
+// a compilation error occurs.
+// It seems that I'm missing something, but after trying a lot,
+// I just can't figure it out. Can someone please help me out?
+//(Translated from Japanese to English on a translation site)
+
+
+#define TUSB_USE_NATIVE_HOST
+
+
+#if !defined(TUSB_USE_NATIVE_HOST)
+#define TUSB_NATIVE_HOST 0
+#else
+#define TUSB_NATIVE_HOST 1
+#endif
+
+
+#if TUSB_NATIVE_HOST == 0
+
+#define CFG_TUSB_RHPORT0_MODE OPT_MODE_DEVICE
+// Enable device stack
+#define CFG_TUD_ENABLED 1
+// Enable host stack with pio-usb if Pico-PIO-USB library is available
+#if __has_include("pio_usb.h")
+#define CFG_TUH_ENABLED 1
+#define CFG_TUH_RPI_PIO_USB 1
+#endif
+
+#else
+
+#define CFG_TUSB_RHPORT0_MODE OPT_MODE_HOST
+// Disable device stack
 #define CFG_TUD_ENABLED 0
+// Enable host stack without pio-usb
 #define CFG_TUH_ENABLED 1
 #define CFG_TUH_RPI_PIO_USB 0
 
-#else
-// native as device
+#endif
+
+
+/*
+#define CFG_TUSB_RHPORT0_MODE OPT_MODE_DEVICE
+
+// Enable device stack
 #define CFG_TUD_ENABLED 1
 
-#if __has_include("pio_usb.h")
 // Enable host stack with pio-usb if Pico-PIO-USB library is available
+#if __has_include("pio_usb.h")
 #define CFG_TUH_ENABLED 1
 #define CFG_TUH_RPI_PIO_USB 1
+#endif
+*/
 
-#else
-// Otherwise enable host controller with MAX3421E
-#define CFG_TUH_ENABLED 1
-#define CFG_TUH_MAX3421 1
-
-#endif // pio_usb.h
-#endif // USE_TINYUSB_HOST
 
 #ifndef CFG_TUSB_MCU
 #define CFG_TUSB_MCU OPT_MCU_RP2040
 #endif
-
-#ifndef CFG_TUSB_OS
 #define CFG_TUSB_OS OPT_OS_PICO
-#endif
 
 #ifndef CFG_TUSB_DEBUG
 #define CFG_TUSB_DEBUG 0
 #endif
-
-// For selectively disable device log (when > CFG_TUSB_DEBUG)
-// #define CFG_TUD_LOG_LEVEL 3
-// #define CFG_TUH_LOG_LEVEL 3
 
 #define CFG_TUSB_MEM_SECTION
 #define CFG_TUSB_MEM_ALIGN TU_ATTR_ALIGNED(4)
@@ -86,7 +123,6 @@ extern "C" {
 #define CFG_TUD_HID 2
 #define CFG_TUD_MIDI 1
 #define CFG_TUD_VENDOR 1
-// #define CFG_TUD_VIDEO 1
 
 // CDC FIFO size of TX and RX
 #define CFG_TUD_CDC_RX_BUFSIZE 256
@@ -134,7 +170,6 @@ extern "C" {
 #define CFG_TUH_CDC 1
 #define CFG_TUH_CDC_FTDI 1
 #define CFG_TUH_CDC_CP210X 1
-#define CFG_TUH_CDC_CH34X 1
 
 // RX & TX fifo size
 #define CFG_TUH_CDC_RX_BUFSIZE 128
@@ -148,7 +183,7 @@ extern "C" {
 // bit rate = 115200, 1 stop bit, no parity, 8 bit data width
 // This need Pico-PIO-USB at least 0.5.1
 #define CFG_TUH_CDC_LINE_CODING_ON_ENUM                                        \
-  { 115200, CDC_LINE_CODING_STOP_BITS_1, CDC_LINE_CODING_PARITY_NONE, 8 }
+  { 115200, CDC_LINE_CONDING_STOP_BITS_1, CDC_LINE_CODING_PARITY_NONE, 8 }
 
 #ifdef __cplusplus
 }
